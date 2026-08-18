@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #000000;
+  --fg: #FFFFFF;
+  --card-bg: rgba(15, 15, 15, 0.6);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  
+  --primary: #FFFFFF;
+  --cyan: #6FE3D4;
+
+  --app-black: #000000;
+  --app-white: #FFFFFF;
+}
+
+:root[data-theme="light"] {
+  --bg: #F5F5F7;
+  --fg: #000000;
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --text-muted: rgba(0, 0, 0, 0.4);
+  
+  --primary: #000000;
+  --cyan: #6FE3D4;
+
+  --app-black: #F5F5F7;
+  --app-white: #000000;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-card: var(--card-bg);
+  --color-border: var(--card-border);
+  --color-muted: var(--text-muted);
+  --color-primary: var(--primary);
+  --color-cyan: var(--cyan);
+
+  --color-black: var(--app-black);
+  --color-white: var(--app-white);
+
+  --font-sans: var(--font-aileron), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Exponential Minimalism Cards */
+.card-minimal {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+/* Fluid edge gradients matching Voice Note layout (dark center, colored edges) */
+.side-glow-rose {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(244, 63, 94, 0.4) 100%);
+}
+
+.side-glow-green {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(52, 211, 153, 0.35) 100%);
+}
+
+.side-glow-blue {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(59, 130, 246, 0.4) 100%);
+}
+
+.side-glow-purple {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(168, 85, 247, 0.4) 100%);
+}
+
+.side-glow-yellow {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(234, 179, 8, 0.35) 100%);
+}
+
+.side-glow-orange {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(249, 115, 22, 0.35) 100%);
+}
+
+.side-glow-cyan-right {
+  background: radial-gradient(at center, var(--card-bg) 20%, rgba(111, 227, 212, 0.35) 100%);
+}
+
+/* Make sure text stays above the glow */
+.card-content {
+  position: relative;
+  z-index: 10;
+}
