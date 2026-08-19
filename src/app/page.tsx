@@ -150,8 +150,8 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
   const DAYS = ["M", "T", "W", "Th", "F"];
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center p-4 overflow-y-auto bg-[radial-gradient(100%_100%_at_50%_100%,rgba(59,130,246,0.25)_0%,transparent_100%)]">
-      <div className="w-full min-h-screen py-12 flex flex-col items-center justify-center relative z-10">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center p-4 overflow-y-auto bg-[radial-gradient(100%_100%_at_50%_100%,rgba(59,130,246,0.25)_0%,transparent_100%)]">
+      <div className="w-full my-auto py-12 flex flex-col items-center justify-center relative z-10">
         <AnimatePresence mode="wait">
           {step === 1 ? (
             <motion.div 
@@ -676,6 +676,8 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
   };
 
   const timelineItems = getTimeline();
+  const hour = currentTime.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
     <motion.div 
@@ -689,7 +691,7 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0 mb-8 md:mb-10">
         <div>
           <p className="font-mono text-xs text-white/40 tracking-[0.2em] uppercase mb-3">CMS / Overview</p>
-          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-white/90">Good morning, {userData?.name || "Hrushi"}</h1>
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-white/90">{greeting}, {userData?.name || "Hrushi"}</h1>
         </div>
         <button className="hidden md:flex items-center space-x-2 bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform font-medium">
           <Plus className="w-5 h-5" />
