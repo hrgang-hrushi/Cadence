@@ -598,9 +598,31 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
     showPulse = true;
     dynamicBg = { background: 'radial-gradient(at center, var(--card-bg) 95%, rgba(244, 63, 94, 0.3) 100%)' };
   } else {
-    badgeLabel = "Overview";
-    dynamicBg = { background: 'var(--card-bg)' };
+    badgeLabel = "No Classes Today";
   }
+
+  // Live Notification when class starts
+  const prevStatusRef = useRef<string>(statusData.type);
+  useEffect(() => {
+    if (statusData.type === 'active' && prevStatusRef.current !== 'active') {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification("Class Started!", { body: `${statusData.classInfo?.name} is live now.` });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification("Class Started!", { body: `${statusData.classInfo?.name} is live now.` });
+            }
+          });
+        }
+      }
+    }
+    prevStatusRef.current = statusData.type;
+  }, [statusData.type, statusData.classInfo?.name]);
+
+  // Real-time stats fallback to dynamic data
+  const hoursRecorded = (userData as any)?.stats?.hoursRecorded || 12;
+  const studyStreak = (userData as any)?.stats?.streak || 5;
 
   const liveTimeStr = currentTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
@@ -697,7 +719,10 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
           <p className="font-mono text-xs text-white/40 tracking-[0.2em] uppercase mb-3">CMS / Overview</p>
           <h1 className="text-4xl md:text-5xl font-light tracking-tight text-white/90">{greeting}, {userData?.name || "Hrushi"}</h1>
         </div>
-        <button className="hidden md:flex items-center space-x-2 bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform font-medium">
+        <button 
+          onClick={() => onNavigate('record')}
+          className="hidden md:flex items-center space-x-2 bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform font-medium"
+        >
           <Plus className="w-5 h-5" />
           <span>Quick Note</span>
         </button>
@@ -872,7 +897,7 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
           {/* 3. Quick Stats */}
           <section className="card-minimal side-glow-cyan-right p-4 md:p-6 flex flex-col justify-center items-center text-center md:col-span-1 lg:col-span-1 row-span-1 group hover:border-white/10 transition-colors cursor-pointer flex-1">
             <div className="card-content flex flex-col items-center justify-center">
-              <h3 className="text-3xl md:text-4xl font-light text-white">12<span className="text-lg md:text-xl text-white/40">h</span></h3>
+              <h3 className="text-3xl md:text-4xl font-light text-white">{hoursRecorded}<span className="text-lg md:text-xl text-white/40">h</span></h3>
               <p className="text-[9px] md:text-xs font-mono text-white/40 uppercase tracking-widest mt-2">Recorded this week</p>
             </div>
           </section>
@@ -886,7 +911,7 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
                 </svg>
               </div>
-              <h3 className="text-xl md:text-2xl font-light text-white">5 Days</h3>
+              <h3 className="text-xl md:text-2xl font-light text-white">{studyStreak} Days</h3>
               <p className="text-[9px] md:text-[10px] font-mono text-white/40 uppercase tracking-widest mt-1">Study Streak</p>
             </div>
           </section>
