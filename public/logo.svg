@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2000" zoomAndPan="magnify" viewBox="0 0 1500 1499.999933" height="2000" preserveAspectRatio="xMidYMid meet" version="1.0">
+  <defs>
+    <clipPath id="25f53ba892">
+      <path d="M 225.925781 150 L 1274.425781 150 L 1274.425781 1392 L 225.925781 1392 Z M 225.925781 150 " clip-rule="nonzero"/>
+    </clipPath>
+    <linearGradient id="blueWhiteGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#3b82f6" />
+      <stop offset="85%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#25f53ba892)">
+    <path fill="url(#blueWhiteGradient)" d="M 633.050781 1391.496094 C 408.582031 1391.496094 225.957031 1208.902344 225.957031 984.457031 L 225.957031 605.667969 L 544.222656 605.667969 L 544.222656 989.664062 C 544.222656 1035.746094 581.726562 1073.25 627.828125 1073.25 L 1063.355469 1073.25 L 1273.726562 1391.496094 Z M 554.117188 468.835938 L 339.847656 150.601562 L 1062.183594 150.601562 L 1274.039062 468.835938 Z M 554.117188 468.835938 " fill-opacity="1" fill-rule="nonzero"/>
+  </g>
+</svg>

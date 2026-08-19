@@ -161,8 +161,8 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
               exit={{ opacity: 0, scale: 0.95 }}
               className="w-full max-w-lg p-10 md:p-14 card-minimal flex flex-col items-center text-center side-glow-cyan-right"
             >
-              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-8 border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-                <Mic className="w-8 h-8 text-white/80" />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
+                <img src="/logo.svg" alt="Cadence Logo" className="w-16 h-16 object-contain" />
               </div>
               <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4">Welcome to <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">Cadence</span></h1>
               <p className="text-white/40 font-light text-lg mb-10 leading-relaxed">Your intelligent voice note taker designed specifically for students.</p>
