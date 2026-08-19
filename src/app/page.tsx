@@ -673,30 +673,25 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
     timelineItems.sort((a, b) => a.startMins - b.startMins);
     let displayItems = timelineItems.filter(item => item.state === 'active' || item.state === 'future');
     
-    let minTomorrowStart = Infinity;
-    let firstTomorrow = null;
+    let tomorrowsClasses: any[] = [];
     for (const cls of userData.classes) {
       for (const meeting of cls.meetings) {
         if (meeting.days.includes(tomorrowStr)) {
           const [startH, startM] = meeting.timeStart.split(':').map(Number);
           const startMins = startH * 60 + startM;
-          if (startMins < minTomorrowStart) {
-            minTomorrowStart = startMins;
-            firstTomorrow = {
-              id: cls.id + '-tom-' + meeting.id,
-              name: cls.name,
-              startMins,
-              timeLabel: 'TOMORROW',
-              state: 'tomorrow',
-            };
-          }
+          tomorrowsClasses.push({
+            id: cls.id + '-tom-' + meeting.id,
+            name: cls.name,
+            startMins,
+            timeLabel: 'TOMORROW',
+            state: 'tomorrow',
+          });
         }
       }
     }
     
-    if (firstTomorrow) {
-      displayItems.push(firstTomorrow);
-    }
+    tomorrowsClasses.sort((a, b) => a.startMins - b.startMins);
+    displayItems = [...displayItems, ...tomorrowsClasses];
     
     return displayItems.slice(0, 4);
   };
