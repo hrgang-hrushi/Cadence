@@ -150,8 +150,8 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
   const DAYS = ["M", "T", "W", "Th", "F"];
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full min-h-screen py-12 flex flex-col items-center justify-center">
+    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center p-4 overflow-y-auto bg-[radial-gradient(100%_100%_at_50%_100%,rgba(59,130,246,0.25)_0%,transparent_100%)]">
+      <div className="w-full min-h-screen py-12 flex flex-col items-center justify-center relative z-10">
         <AnimatePresence mode="wait">
           {step === 1 ? (
             <motion.div 
@@ -159,12 +159,10 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg p-10 md:p-14 card-minimal flex flex-col items-center text-center side-glow-cyan-right"
+              className="w-full max-w-lg p-10 md:p-14 flex flex-col items-center text-center"
             >
-              <div className="w-20 h-20 rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
-                <img src="/logo.svg" alt="Cadence Logo" className="w-16 h-16 object-contain" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4">Welcome to <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">Cadence</span></h1>
+              <img src="/logo.svg" alt="Cadence Logo" className="w-24 h-24 object-contain mb-8 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+              <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4">Welcome to <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">Cadence</span></h1>
               <p className="text-white/40 font-light text-lg mb-10 leading-relaxed">Your intelligent voice note taker designed specifically for students.</p>
               
               <button 
@@ -207,7 +205,7 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, y: -20 }}
-              className="w-full max-w-xl p-8 md:p-10 card-minimal flex flex-col side-glow-rose"
+              className="w-full max-w-xl p-8 md:p-10 flex flex-col"
             >
               <h2 className="text-2xl font-light tracking-tight mb-2">Almost there!</h2>
               <p className="text-white/40 font-light text-sm mb-8">Let's set up your schedule.</p>
