@@ -198,6 +198,10 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
               >
                 Continue without account
               </button>
+              
+              <div className="mt-8 text-sm font-light text-white/40">
+                Made for students by <a href="https://hrushi-gr.vercel.app" target="_blank" rel="noopener noreferrer" className="text-white hover:underline">Hrushi Gangala</a>
+              </div>
             </motion.div>
           ) : (
             <motion.div 
@@ -1447,6 +1451,10 @@ function SettingsTab({ userData, onModify }: { userData: { name: string, classes
             </div>
           </div>
         </section>
+      </div>
+
+      <div className="mt-16 text-center text-sm font-light text-white/40 mb-8">
+        Made for students by <a href="https://hrushi-gr.vercel.app" target="_blank" rel="noopener noreferrer" className="text-white hover:underline transition-colors">Hrushi Gangala</a>
       </div>
     </motion.div>
   );

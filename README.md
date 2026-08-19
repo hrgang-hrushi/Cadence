@@ -30,43 +30,7 @@ Cadence is built with responsive web technologies, meaning you can install it di
 
 ---
 
-## 🛠️ Local Development Setup
-
-Cadence consists of a Next.js (React) frontend and a Python FastAPI backend for the OCR schedule-reading feature.
-
-### 1. Setup the Next.js Frontend
-```bash
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-### 2. Setup Firebase Config
-You will need to create a `.env.local` file in the root directory and add your Firebase credentials to enable Google Authentication:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY="your-api-key"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-auth-domain"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
-NEXT_PUBLIC_FIREBASE_APP_ID="your-app-id"
-```
-
-### 3. Setup the Python OCR Backend
-To use the "Add via Picture" schedule upload feature, you must run the local FastAPI server:
-```bash
-# Navigate to the backend folder (if applicable) or root
-cd backend # (or stay in root depending on where main.py is located)
-
-# Install Python dependencies
-pip install fastapi uvicorn python-multipart pytesseract pillow
-
-# Start the Python backend on port 8000
-python main.py
-```
-*Note: Make sure you have Tesseract-OCR installed on your machine (e.g., `brew install tesseract` on Mac).*
+Made for students by [Hrushi Gangala](https://hrushi-gr.vercel.app)
 
 ## 🎨 Tech Stack
 - **Frontend:** Next.js (React), Tailwind CSS, Framer Motion
