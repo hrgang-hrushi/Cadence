@@ -33,16 +33,17 @@ export function useVoiceRecorder(onRecordFinished?: (minutes: number) => void) {
         recognition.continuous = true;
         recognition.interimResults = true;
         
+        let finalTranscriptStr = '';
         recognition.onresult = (e: any) => {
-          let finalTranscript = '';
+          let interimTranscript = '';
           for (let i = e.resultIndex; i < e.results.length; ++i) {
             if (e.results[i].isFinal) {
-              finalTranscript += e.results[i][0].transcript + ' ';
+              finalTranscriptStr += e.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += e.results[i][0].transcript + ' ';
             }
           }
-          if (finalTranscript) {
-            transcriptRef.current += finalTranscript;
-          }
+          transcriptRef.current = finalTranscriptStr + interimTranscript;
         };
         recognitionRef.current = recognition;
         recognition.start();
