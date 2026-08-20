@@ -362,12 +362,32 @@ function Onboarding({ onComplete, initialData }: { onComplete: (data: { name: st
   );
 }
 
+import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
+
 type Tab = "home" | "record" | "pomodoro" | "settings";
 export default function AppLayout() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [hasOnboarded, setHasOnboarded] = useState(false);
   const [userData, setUserData] = useState<{ name: string, classes: ClassInfo[] } | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  const handleRecordComplete = async (minutes: number) => {
+    if (!userData) return;
+    const currentStats = (userData as any).stats || { minutesRecorded: 0, streak: 1, lastLoginDate: new Date().toISOString().split('T')[0] };
+    const newStats = { ...currentStats, minutesRecorded: currentStats.minutesRecorded + minutes };
+    const newData = { ...userData, stats: newStats };
+    setUserData(newData);
+    localStorage.setItem("cadenceUserData", JSON.stringify(newData));
+    if (auth.currentUser) {
+       try {
+         await setDoc(doc(db, "users", auth.currentUser.uid), { stats: newStats }, { merge: true });
+       } catch (e) {
+         console.error("Could not update stats in Firestore", e);
+       }
+    }
+  };
+
+  const recordContext = useVoiceRecorder(handleRecordComplete);
 
   useEffect(() => {
     const processStats = (data: any) => {
@@ -446,22 +466,6 @@ export default function AppLayout() {
     }
   };
 
-  const handleRecordComplete = async (minutes: number) => {
-    if (!userData) return;
-    const currentStats = (userData as any).stats || { minutesRecorded: 0, streak: 1, lastLoginDate: new Date().toISOString().split('T')[0] };
-    const newStats = { ...currentStats, minutesRecorded: currentStats.minutesRecorded + minutes };
-    const newData = { ...userData, stats: newStats };
-    setUserData(newData);
-    localStorage.setItem("cadenceUserData", JSON.stringify(newData));
-    if (auth.currentUser) {
-       try {
-         await setDoc(doc(db, "users", auth.currentUser.uid), { stats: newStats }, { merge: true });
-       } catch (e) {
-         console.error("Could not update stats in Firestore", e);
-       }
-    }
-  };
-
   if (isLoadingAuth && !hasOnboarded) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center">
@@ -477,6 +481,23 @@ export default function AppLayout() {
 
   return (
     <main className="min-h-screen relative bg-black text-white selection:bg-white/20">
+      
+      {/* Global Recording Pill */}
+      <AnimatePresence>
+        {recordContext.isRecording && activeTab !== "record" && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            onClick={() => setActiveTab("record")}
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-black border border-rose-500/50 rounded-full px-4 py-2 flex items-center gap-3 shadow-[0_0_20px_rgba(244,63,94,0.3)] cursor-pointer hover:scale-105 transition-transform"
+          >
+            <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-xs font-mono uppercase tracking-widest text-rose-100">Recording...</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Navigation - Floating Pill Dock (Bottom Center) */}
       <nav className="fixed bottom-12 md:bottom-16 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-3xl border border-white/10 px-6 py-2 md:px-8 md:py-2.5 flex flex-row items-center gap-4 md:gap-6 rounded-full z-50 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
         <NavItem 
@@ -509,7 +530,7 @@ export default function AppLayout() {
       <div className="w-full h-screen overflow-hidden">
         <AnimatePresence mode="wait">
           {activeTab === "home" && <HomeTab key="home" onNavigate={setActiveTab} userData={userData} />}
-          {activeTab === "record" && <RecordTab key="record" onRecordFinished={handleRecordComplete} />}
+          {activeTab === "record" && <RecordTab key="record" onRecordFinished={handleRecordComplete} recordContext={recordContext} />}
           {activeTab === "pomodoro" && <PomodoroTab key="pomodoro" />}
           {activeTab === "settings" && <SettingsTab key="settings" userData={userData} onModify={() => setHasOnboarded(false)} onUpdateName={handleUpdateName} />}
         </AnimatePresence>
@@ -998,126 +1019,21 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
   );
 }
 
-function RecordTab({ onRecordFinished }: { onRecordFinished?: (minutes: number) => void }) {
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  
-  const audioChunks = useRef<Blob[]>([]);
-  const transcriptRef = useRef("");
-  const bookmarksRef = useRef<number[]>([]);
-  const recordingStartTime = useRef<number>(0);
-  const recognitionRef = useRef<any>(null);
-  
-  const [notes, setNotes] = useState([
-    { id: 1, title: "Lecture 1 Summary", time: "10:00 AM • 45m", color: "side-glow-cyan-right", audioUrl: null as string | null, transcript: "This is a mock transcript from a previous class. The professor mentioned that the midterm will cover chapters 1 through 4...", bookmarks: [120, 450] },
-    { id: 2, title: "Study Group Sync", time: "Yesterday", color: "side-glow-orange", audioUrl: null, transcript: "Mock transcript...", bookmarks: [] },
-    { id: 3, title: "Ideas Draft", time: "Mon • 5m", color: "side-glow-rose", audioUrl: null, transcript: "Mock transcript...", bookmarks: [15] }
-  ]);
+function RecordTab({ 
+  onRecordFinished,
+  recordContext
+}: { 
+  onRecordFinished?: (minutes: number) => void,
+  recordContext: any
+}) {
+  const { isRecording, toggleRecording, addBookmark, notes, setNotes, recordingStartTime } = recordContext;
   
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [selectedNote, setSelectedNote] = useState<any | null>(null);
   
-  const COLORS = ["side-glow-rose", "side-glow-purple", "side-glow-orange", "side-glow-blue", "side-glow-yellow", "side-glow-cyan", "side-glow-cyan-right", "side-glow-magenta"];
   const ticks = Array.from({ length: 60 });
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunks.current.push(e.data);
-      };
-
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        
-        recognition.onresult = (e: any) => {
-          let finalTranscript = '';
-          for (let i = e.resultIndex; i < e.results.length; ++i) {
-            if (e.results[i].isFinal) {
-              finalTranscript += e.results[i][0].transcript + ' ';
-            }
-          }
-          if (finalTranscript) {
-            transcriptRef.current += finalTranscript;
-          }
-        };
-        recognitionRef.current = recognition;
-        recognition.start();
-      }
-      
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
-        
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-        
-        const durationMinutes = Math.max(1, Math.round((Date.now() - recordingStartTime.current) / 60000));
-        
-        setNotes(prev => [
-          { 
-            id: Date.now(), 
-            title: "New Voice Note", 
-            time: `${timeStr} • ${durationMinutes}m`, 
-            color: randomColor, 
-            audioUrl: url,
-            transcript: transcriptRef.current,
-            bookmarks: [...bookmarksRef.current]
-          },
-          ...prev
-        ]);
-        
-        if (onRecordFinished) {
-          onRecordFinished(durationMinutes);
-        }
-        
-        audioChunks.current = [];
-        if (recognitionRef.current) {
-          try { recognitionRef.current.stop(); } catch(e) {}
-        }
-      };
-
-      recordingStartTime.current = Date.now();
-      transcriptRef.current = "";
-      bookmarksRef.current = [];
-      recorder.start();
-      setMediaRecorder(recorder);
-      setIsRecording(true);
-    } catch (err) {
-      console.error("Microphone access error", err);
-      alert("Microphone access denied. Please allow microphone permissions.");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-    }
-    setIsRecording(false);
-  };
-
-  const toggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
-  const addBookmark = () => {
-    const elapsed = Math.floor((Date.now() - recordingStartTime.current) / 1000);
-    bookmarksRef.current.push(elapsed);
-  };
 
   const playNote = (url: string | null, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -1130,7 +1046,7 @@ function RecordTab({ onRecordFinished }: { onRecordFinished?: (minutes: number) 
 
   const handleDelete = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setNotes(prev => prev.filter(n => n.id !== id));
+    setNotes((prev: any) => prev.filter((n: any) => n.id !== id));
     setOpenDropdownId(null);
   };
 
@@ -1142,7 +1058,7 @@ function RecordTab({ onRecordFinished }: { onRecordFinished?: (minutes: number) 
   };
 
   const saveRename = (id: number) => {
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, title: editTitle } : n));
+    setNotes((prev: any) => prev.map((n: any) => n.id === id ? { ...n, title: editTitle } : n));
     setEditingId(null);
   };
 
@@ -1215,7 +1131,7 @@ function RecordTab({ onRecordFinished }: { onRecordFinished?: (minutes: number) 
         <div className="w-full lg:w-96 flex flex-col space-y-6">
           <h2 className="text-sm font-medium text-white/40 uppercase tracking-widest">Note history</h2>
           <div className="space-y-4 overflow-y-auto pr-2 max-h-[500px] pb-32">
-            {notes.map((note) => (
+            {notes.map((note: any) => (
               <div 
                 key={note.id} 
                 onClick={() => setSelectedNote(note)}
