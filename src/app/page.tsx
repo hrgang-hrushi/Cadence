@@ -405,9 +405,23 @@ export default function AppLayout() {
     
     if (auth.currentUser) {
        try {
-         await setDoc(doc(db, "users", auth.currentUser.uid), data);
+         await setDoc(doc(db, "users", auth.currentUser.uid), data, { merge: true });
        } catch (e) {
          console.error("Could not save to Firestore", e);
+       }
+    }
+  };
+
+  const handleUpdateName = async (newName: string) => {
+    if (!userData) return;
+    const newData = { ...userData, name: newName };
+    setUserData(newData);
+    localStorage.setItem("cadenceUserData", JSON.stringify(newData));
+    if (auth.currentUser) {
+       try {
+         await setDoc(doc(db, "users", auth.currentUser.uid), { name: newName }, { merge: true });
+       } catch (e) {
+         console.error("Could not update name in Firestore", e);
        }
     }
   };
@@ -461,7 +475,7 @@ export default function AppLayout() {
           {activeTab === "home" && <HomeTab key="home" onNavigate={setActiveTab} userData={userData} />}
           {activeTab === "record" && <RecordTab key="record" />}
           {activeTab === "pomodoro" && <PomodoroTab key="pomodoro" />}
-          {activeTab === "settings" && <SettingsTab key="settings" userData={userData} onModify={() => setHasOnboarded(false)} />}
+          {activeTab === "settings" && <SettingsTab key="settings" userData={userData} onModify={() => setHasOnboarded(false)} onUpdateName={handleUpdateName} />}
         </AnimatePresence>
       </div>
     </main>
@@ -1404,7 +1418,17 @@ function PomodoroTab() {
   );
 }
 
-function SettingsTab({ userData, onModify }: { userData: { name: string, classes: ClassInfo[] } | null, onModify: () => void }) {
+function SettingsTab({ userData, onModify, onUpdateName }: { userData: { name: string, classes: ClassInfo[] } | null, onModify: () => void, onUpdateName: (name: string) => void }) {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(userData?.name || "");
+
+  const saveName = () => {
+    if (tempName.trim()) {
+      onUpdateName(tempName.trim());
+    }
+    setIsEditingName(false);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -1435,8 +1459,27 @@ function SettingsTab({ userData, onModify }: { userData: { name: string, classes
           <div className="card-content w-24 h-24 rounded-full border border-white/10 bg-white/5 flex items-center justify-center">
             <User className="w-10 h-10 text-white/50" strokeWidth={1} />
           </div>
-          <div className="card-content">
-            <h2 className="text-3xl font-light tracking-wide">{userData?.name || "Student"}</h2>
+          <div className="card-content w-full flex flex-col items-center">
+            {isEditingName ? (
+              <div className="flex items-center gap-2 mb-2 w-full max-w-[200px]">
+                <input 
+                  type="text" 
+                  value={tempName}
+                  onChange={e => setTempName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && saveName()}
+                  autoFocus
+                  className="bg-[#111] border border-white/20 rounded-lg px-3 py-1 text-white text-center w-full outline-none focus:border-blue-400 transition-colors"
+                />
+                <button onClick={saveName} className="text-blue-400 p-1 hover:bg-blue-400/10 rounded-full"><ArrowRight className="w-4 h-4" /></button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-3">
+                <h2 className="text-3xl font-light tracking-wide">{userData?.name || "Student"}</h2>
+                <button onClick={() => { setTempName(userData?.name || ""); setIsEditingName(true); }} className="text-white/40 hover:text-white transition-colors">
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             <p className="text-white/40 text-sm mt-2 font-light">
               {userData?.classes?.length || 0} {(userData?.classes?.length === 1) ? "class" : "classes"} enrolled
             </p>
