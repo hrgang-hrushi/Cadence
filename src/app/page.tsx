@@ -1234,7 +1234,7 @@ function RecordTab({
                 <div>
                   <h3 className="text-xs font-mono text-white/40 uppercase tracking-widest mb-4">Raw Transcript</h3>
                   <p className="text-lg leading-relaxed font-light text-white/80 whitespace-pre-wrap">
-                    {selectedNote.transcript || "No transcript available for this note. Transcription requires Chrome or Safari with Web Speech API support."}
+                    {selectedNote.transcript || "No speech was detected in this recording."}
                   </p>
                 </div>
 

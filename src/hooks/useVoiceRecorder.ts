@@ -45,8 +45,15 @@ export function useVoiceRecorder(onRecordFinished?: (minutes: number) => void) {
           }
           transcriptRef.current = finalTranscriptStr + interimTranscript;
         };
+        recognition.onerror = (e: any) => {
+          console.error("Speech recognition error:", e.error);
+          transcriptRef.current = `[Speech recognition failed: ${e.error}]`;
+        };
         recognitionRef.current = recognition;
         recognition.start();
+      } else {
+        console.warn("SpeechRecognition not supported in this browser.");
+        transcriptRef.current = "[Transcription not supported in this browser. Try Chrome/Safari.]";
       }
       
       recorder.onstop = () => {
