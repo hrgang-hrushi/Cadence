@@ -370,10 +370,27 @@ export default function AppLayout() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   useEffect(() => {
+    const processStats = (data: any) => {
+      const today = new Date().toISOString().split('T')[0];
+      let stats = data.stats || { minutesRecorded: 0, streak: 0, lastLoginDate: "" };
+      
+      if (stats.lastLoginDate !== today) {
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        if (stats.lastLoginDate === yesterday) {
+          stats.streak += 1;
+        } else {
+          stats.streak = 1;
+        }
+        stats.lastLoginDate = today;
+      }
+      return { ...data, stats };
+    };
+
     const cached = localStorage.getItem("cadenceUserData");
     if (cached) {
       try {
-        setUserData(JSON.parse(cached));
+        const parsed = processStats(JSON.parse(cached));
+        setUserData(parsed);
         setHasOnboarded(true);
       } catch (e) {}
     }
@@ -384,10 +401,12 @@ export default function AppLayout() {
           const docRef = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-             const data = docSnap.data() as any;
+             const data = processStats(docSnap.data());
              setUserData(data);
              setHasOnboarded(true);
              localStorage.setItem("cadenceUserData", JSON.stringify(data));
+             // Save the updated streak back
+             await setDoc(doc(db, "users", user.uid), { stats: data.stats }, { merge: true });
           }
         } catch (e) {
           console.error("Firestore read error", e);
@@ -399,13 +418,14 @@ export default function AppLayout() {
   }, []);
 
   const handleOnboardingComplete = async (data: { name: string, classes: ClassInfo[] }) => {
-    setUserData(data);
+    const newData = { ...data, stats: { minutesRecorded: 0, streak: 1, lastLoginDate: new Date().toISOString().split('T')[0] } };
+    setUserData(newData as any);
     setHasOnboarded(true);
-    localStorage.setItem("cadenceUserData", JSON.stringify(data));
+    localStorage.setItem("cadenceUserData", JSON.stringify(newData));
     
     if (auth.currentUser) {
        try {
-         await setDoc(doc(db, "users", auth.currentUser.uid), data, { merge: true });
+         await setDoc(doc(db, "users", auth.currentUser.uid), newData, { merge: true });
        } catch (e) {
          console.error("Could not save to Firestore", e);
        }
@@ -422,6 +442,22 @@ export default function AppLayout() {
          await setDoc(doc(db, "users", auth.currentUser.uid), { name: newName }, { merge: true });
        } catch (e) {
          console.error("Could not update name in Firestore", e);
+       }
+    }
+  };
+
+  const handleRecordComplete = async (minutes: number) => {
+    if (!userData) return;
+    const currentStats = (userData as any).stats || { minutesRecorded: 0, streak: 1, lastLoginDate: new Date().toISOString().split('T')[0] };
+    const newStats = { ...currentStats, minutesRecorded: currentStats.minutesRecorded + minutes };
+    const newData = { ...userData, stats: newStats };
+    setUserData(newData);
+    localStorage.setItem("cadenceUserData", JSON.stringify(newData));
+    if (auth.currentUser) {
+       try {
+         await setDoc(doc(db, "users", auth.currentUser.uid), { stats: newStats }, { merge: true });
+       } catch (e) {
+         console.error("Could not update stats in Firestore", e);
        }
     }
   };
@@ -473,7 +509,7 @@ export default function AppLayout() {
       <div className="w-full h-screen overflow-hidden">
         <AnimatePresence mode="wait">
           {activeTab === "home" && <HomeTab key="home" onNavigate={setActiveTab} userData={userData} />}
-          {activeTab === "record" && <RecordTab key="record" />}
+          {activeTab === "record" && <RecordTab key="record" onRecordFinished={handleRecordComplete} />}
           {activeTab === "pomodoro" && <PomodoroTab key="pomodoro" />}
           {activeTab === "settings" && <SettingsTab key="settings" userData={userData} onModify={() => setHasOnboarded(false)} onUpdateName={handleUpdateName} />}
         </AnimatePresence>
@@ -635,8 +671,9 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
   }, [statusData.type, statusData.classInfo?.name]);
 
   // Real-time stats fallback to dynamic data
-  const hoursRecorded = (userData as any)?.stats?.hoursRecorded || 12;
-  const studyStreak = (userData as any)?.stats?.streak || 5;
+  const minutes = (userData as any)?.stats?.minutesRecorded || 0;
+  const hoursRecorded = parseFloat((minutes / 60).toFixed(1));
+  const studyStreak = (userData as any)?.stats?.streak || 0;
 
   const liveTimeStr = currentTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
@@ -961,7 +998,7 @@ function HomeTab({ onNavigate, userData }: { onNavigate: (tab: Tab) => void, use
   );
 }
 
-function RecordTab() {
+function RecordTab({ onRecordFinished }: { onRecordFinished?: (minutes: number) => void }) {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   
@@ -1024,11 +1061,13 @@ function RecordTab() {
         
         const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
         
+        const durationMinutes = Math.max(1, Math.round((Date.now() - recordingStartTime.current) / 60000));
+        
         setNotes(prev => [
           { 
             id: Date.now(), 
             title: "New Voice Note", 
-            time: `${timeStr} • Just now`, 
+            time: `${timeStr} • ${durationMinutes}m`, 
             color: randomColor, 
             audioUrl: url,
             transcript: transcriptRef.current,
@@ -1036,6 +1075,10 @@ function RecordTab() {
           },
           ...prev
         ]);
+        
+        if (onRecordFinished) {
+          onRecordFinished(durationMinutes);
+        }
         
         audioChunks.current = [];
         if (recognitionRef.current) {
