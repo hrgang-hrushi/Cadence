@@ -11,6 +11,7 @@ export function useVoiceRecorder(onRecordFinished?: (minutes: number) => void) {
   const bookmarksRef = useRef<number[]>([]);
   const recordingStartTime = useRef<number>(0);
   const recognitionRef = useRef<any>(null);
+  const shouldRecognizeRef = useRef(false);
   
   const [notes, setNotes] = useState([
     { id: 1, title: "Lecture 1 Summary", time: "10:00 AM • 45m", color: "side-glow-cyan-right", audioUrl: null as string | null, transcript: "This is a mock transcript from a previous class. The professor mentioned that the midterm will cover chapters 1 through 4...", bookmarks: [120, 450] },
@@ -29,6 +30,7 @@ export function useVoiceRecorder(onRecordFinished?: (minutes: number) => void) {
 
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
+        shouldRecognizeRef.current = true;
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
@@ -47,16 +49,29 @@ export function useVoiceRecorder(onRecordFinished?: (minutes: number) => void) {
         };
         recognition.onerror = (e: any) => {
           console.error("Speech recognition error:", e.error);
-          transcriptRef.current = `[Speech recognition failed: ${e.error}]`;
+          if (e.error !== 'no-speech') {
+            transcriptRef.current = `[Speech recognition failed: ${e.error}]`;
+          }
+        };
+        recognition.onend = () => {
+          if (shouldRecognizeRef.current) {
+            try {
+              recognition.start();
+            } catch (err) {
+              console.error("Failed to restart recognition", err);
+            }
+          }
         };
         recognitionRef.current = recognition;
-        recognition.start();
+        try {
+          recognition.start();
+        } catch (e) {}
       } else {
         console.warn("SpeechRecognition not supported in this browser.");
-        transcriptRef.current = "[Transcription not supported in this browser. Try Chrome/Safari.]";
       }
       
       recorder.onstop = () => {
+        shouldRecognizeRef.current = false;
         const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(audioBlob);
         
@@ -103,6 +118,7 @@ export function useVoiceRecorder(onRecordFinished?: (minutes: number) => void) {
   };
 
   const stopRecording = () => {
+    shouldRecognizeRef.current = false;
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
